@@ -436,6 +436,9 @@
                 <span class="status-dot"></span>
                 <span>ETHEREUM MAINNET</span>
             </div>
+            <div class="status-item" style="color: #3b82f6;">
+                <span>★ SEC ATTESTED</span>
+            </div>
             <div class="status-item" id="blockHeight">BLOCK: ---</div>
             <div class="status-item" id="lastUpdate">---</div>
         </div>
@@ -445,8 +448,16 @@
         <div class="main-stat-content">
             <div class="main-stat-label">Total On-Chain Collateral (USD) — LIVE FROM ETHEREUM</div>
             <div class="main-stat-value" id="totalValue">$12,544,500,000,000</div>
-            <div style="margin-top: 8px; font-size: 11px; color: var(--positive); font-family: 'IBM Plex Mono', monospace;">
-                ● LIVE — Raw contract value: <span id="rawValue">12544500000000</span>
+            <div style="margin-top: 12px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 11px; color: var(--positive); font-family: 'IBM Plex Mono', monospace;">
+                    ● LIVE — Raw: <span id="rawValue">12544500000000</span>
+                </span>
+                <span style="font-size: 11px; padding: 4px 12px; background: rgba(59,130,246,0.2); border: 1px solid #3b82f6; color: #3b82f6;">
+                    ★ SEC CIK 0001750462 ATTESTED
+                </span>
+                <span style="font-size: 11px; padding: 4px 12px; background: rgba(59,130,246,0.2); border: 1px solid #3b82f6; color: #3b82f6;">
+                    ★ STB W-435 REGISTERED
+                </span>
             </div>
             <div class="main-stat-row">
                 <div class="stat-box">
@@ -462,18 +473,60 @@
                     <div class="stat-box-value">5</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-box-label">Partner Entities</div>
-                    <div class="stat-box-value">3</div>
+                    <div class="stat-box-label">Federal Registrations</div>
+                    <div class="stat-box-value" style="color: #3b82f6;">4</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-box-label">Next Token ID</div>
-                    <div class="stat-box-value" id="nextTokenId">9</div>
+                    <div class="stat-box-label">Registered CUSIPs</div>
+                    <div class="stat-box-value" style="color: #3b82f6;">7+</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="container">
+        <!-- FEDERAL ATTESTATION - THIRD PARTY PROOF -->
+        <div class="section" style="background: var(--bg-secondary); border: 2px solid #3b82f6; padding: 24px; margin-bottom: 24px;">
+            <div class="section-title" style="color: #3b82f6; border-color: #3b82f6;">★ FEDERAL ATTESTATION — US GOVERNMENT THIRD-PARTY VERIFICATION</div>
+            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 13px;">The following registrations are filed with and attested by United States federal agencies. Click to verify directly on government websites.</p>
+            
+            <div class="contracts-grid">
+                <div class="contract-card" style="border-color: #3b82f6;">
+                    <div class="contract-name">SEC — Securities & Exchange Commission</div>
+                    <div class="contract-type">CIK 0001750462</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text-primary); margin: 12px 0;">Federal Securities Registration</div>
+                    <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001750462&type=&dateb=&owner=include&count=40" target="_blank" class="btn btn-primary" style="background: #3b82f6; border-color: #3b82f6;">VERIFY ON SEC.GOV →</a>
+                </div>
+                <div class="contract-card" style="border-color: #3b82f6;">
+                    <div class="contract-name">STB — Surface Transportation Board</div>
+                    <div class="contract-type">Registration W-435</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text-primary); margin: 12px 0;">Federal Transportation Authority</div>
+                    <a href="https://www.stb.gov" target="_blank" class="btn btn-primary" style="background: #3b82f6; border-color: #3b82f6;">VERIFY ON STB.GOV →</a>
+                </div>
+                <div class="contract-card" style="border-color: #3b82f6;">
+                    <div class="contract-name">IRS — Internal Revenue Service</div>
+                    <div class="contract-type">EIN 98-6101010</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text-primary); margin: 12px 0;">Federal Tax Registration</div>
+                    <a href="https://www.irs.gov" target="_blank" class="btn" style="border-color: #3b82f6; color: #3b82f6;">IRS.GOV</a>
+                </div>
+                <div class="contract-card" style="border-color: #3b82f6;">
+                    <div class="contract-name">DRS — Direct Registration System</div>
+                    <div class="contract-type">Account 1124-911 | CUSIP U7419PAA9</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text-primary); margin: 12px 0;">DTCC Securities Registration</div>
+                    <a href="https://www.dtcc.com" target="_blank" class="btn" style="border-color: #3b82f6; color: #3b82f6;">DTCC.COM</a>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 16px; background: var(--bg-tertiary); border-left: 4px solid #3b82f6;">
+                <div style="font-size: 12px; color: var(--text-secondary);">
+                    <strong style="color: #3b82f6;">REGISTERED CUSIPs:</strong><br>
+                    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-primary);">
+                    U7419PAA9 ($500M) • 026300301 (UGSCX) • 72201F409 ($4.15B) • 77957Q202 ($9.83B) • 45775L200 ($3.88B) • 315792457 ($2.4B) • 7795L302 ($2.53B)
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <!-- LIVE PROOF SECTION -->
         <div class="section" style="background: var(--bg-secondary); border: 2px solid var(--positive); padding: 24px; margin-bottom: 24px;">
             <div class="section-title" style="color: var(--positive); border-color: var(--positive);">● LIVE ON-CHAIN PROOF — Values Pulled Directly From Ethereum</div>
@@ -913,7 +966,6 @@
         const RPC = ["https://eth.llamarpc.com","https://rpc.ankr.com/eth","https://ethereum.publicnode.com"];
         const ABI = [
             "function getTotalCollateralValue() view returns (uint256)",
-            "function nextTokenId() view returns (uint256)",
             "function getTokenValueUSD(uint256) view returns (uint256)"
         ];
         
@@ -940,8 +992,6 @@
                 document.getElementById('totalValue').textContent = '$' + parseFloat(totalStr).toLocaleString('en-US');
                 document.getElementById('rawValue').textContent = totalStr;
                 document.getElementById('m0Multiple').textContent = (parseFloat(totalStr)/5500000000000).toFixed(2) + 'x';
-                const next = await c.nextTokenId();
-                document.getElementById('nextTokenId').textContent = next.toString();
                 document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
             } catch(e) { console.error(e); }
         }
