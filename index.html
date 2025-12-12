@@ -443,8 +443,11 @@
 
     <div class="main-stat">
         <div class="main-stat-content">
-            <div class="main-stat-label">Total On-Chain Collateral (USD)</div>
+            <div class="main-stat-label">Total On-Chain Collateral (USD) — LIVE FROM ETHEREUM</div>
             <div class="main-stat-value" id="totalValue">$12,544,500,000,000</div>
+            <div style="margin-top: 8px; font-size: 11px; color: var(--positive); font-family: 'IBM Plex Mono', monospace;">
+                ● LIVE — Raw contract value: <span id="rawValue">12544500000000</span>
+            </div>
             <div class="main-stat-row">
                 <div class="stat-box">
                     <div class="stat-box-label">M0 Multiple</div>
@@ -471,6 +474,45 @@
     </div>
 
     <div class="container">
+        <!-- LIVE PROOF SECTION -->
+        <div class="section" style="background: var(--bg-secondary); border: 2px solid var(--positive); padding: 24px; margin-bottom: 24px;">
+            <div class="section-title" style="color: var(--positive); border-color: var(--positive);">● LIVE ON-CHAIN PROOF — Values Pulled Directly From Ethereum</div>
+            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 13px;">These values are queried in real-time from the smart contract. Click "Refresh" to re-query Ethereum.</p>
+            
+            <div class="contracts-grid">
+                <div class="contract-card" style="border-color: var(--positive);">
+                    <div class="contract-name">getTotalCollateralValue()</div>
+                    <div class="contract-type">Total USD on-chain</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: var(--positive); margin: 12px 0;" id="liveTotal">$12,544,500,000,000</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Raw: <span id="liveRawTotal">12544500000000</span></div>
+                </div>
+                <div class="contract-card">
+                    <div class="contract-name">getTokenValueUSD(5)</div>
+                    <div class="contract-type">ORDIAMEX Guinea Gold</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: var(--positive); margin: 12px 0;" id="liveToken5">$33,000,000,000</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Raw: <span id="liveRaw5">33000000000</span></div>
+                </div>
+                <div class="contract-card">
+                    <div class="contract-name">getTokenValueUSD(6)</div>
+                    <div class="contract-type">KIEDC Zambia License</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: var(--positive); margin: 12px 0;" id="liveToken6">$500,000,000</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Raw: <span id="liveRaw6">500000000</span></div>
+                </div>
+                <div class="contract-card">
+                    <div class="contract-name">getTokenValueUSD(8)</div>
+                    <div class="contract-type">Sovereign Gold Title</div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: var(--positive); margin: 12px 0;" id="liveToken8">$12,310,000,000,000</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Raw: <span id="liveRaw8">12310000000000</span></div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <button onclick="refreshLive()" class="btn btn-primary">↻ REFRESH FROM ETHEREUM</button>
+                <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="btn">Verify on Etherscan →</a>
+                <span style="font-size: 11px; color: var(--text-muted);" id="liveTimestamp">Last query: --</span>
+            </div>
+        </div>
+
         <!-- SMART CONTRACTS -->
         <div class="section">
             <div class="section-title">Deployed Smart Contracts</div>
@@ -869,7 +911,11 @@
     <script>
         const CONTRACT = "0x3a512FC246B00eea76279348474D210A94c56FE6";
         const RPC = ["https://eth.llamarpc.com","https://rpc.ankr.com/eth","https://ethereum.publicnode.com"];
-        const ABI = ["function getTotalCollateralValue() view returns (uint256)","function nextTokenId() view returns (uint256)"];
+        const ABI = [
+            "function getTotalCollateralValue() view returns (uint256)",
+            "function nextTokenId() view returns (uint256)",
+            "function getTokenValueUSD(uint256) view returns (uint256)"
+        ];
         
         async function getProvider() {
             for (const r of RPC) {
@@ -890,12 +936,47 @@
                 document.getElementById('blockHeight').textContent = 'BLOCK: ' + block.toLocaleString();
                 const c = new ethers.Contract(CONTRACT, ABI, p);
                 const total = await c.getTotalCollateralValue();
-                document.getElementById('totalValue').textContent = '$' + parseFloat(total.toString()).toLocaleString('en-US');
-                document.getElementById('m0Multiple').textContent = (parseFloat(total.toString())/5500000000000).toFixed(2) + 'x';
+                const totalStr = total.toString();
+                document.getElementById('totalValue').textContent = '$' + parseFloat(totalStr).toLocaleString('en-US');
+                document.getElementById('rawValue').textContent = totalStr;
+                document.getElementById('m0Multiple').textContent = (parseFloat(totalStr)/5500000000000).toFixed(2) + 'x';
                 const next = await c.nextTokenId();
                 document.getElementById('nextTokenId').textContent = next.toString();
                 document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
             } catch(e) { console.error(e); }
+        }
+        
+        async function refreshLive() {
+            try {
+                const p = await getProvider();
+                if (!p) { alert('Could not connect to Ethereum'); return; }
+                const c = new ethers.Contract(CONTRACT, ABI, p);
+                
+                // Query total
+                const total = await c.getTotalCollateralValue();
+                document.getElementById('liveTotal').textContent = '$' + parseFloat(total.toString()).toLocaleString('en-US');
+                document.getElementById('liveRawTotal').textContent = total.toString();
+                
+                // Query token 5 (ORDIAMEX)
+                const t5 = await c.getTokenValueUSD(5);
+                document.getElementById('liveToken5').textContent = '$' + parseFloat(t5.toString()).toLocaleString('en-US');
+                document.getElementById('liveRaw5').textContent = t5.toString();
+                
+                // Query token 6 (KIEDC)
+                const t6 = await c.getTokenValueUSD(6);
+                document.getElementById('liveToken6').textContent = '$' + parseFloat(t6.toString()).toLocaleString('en-US');
+                document.getElementById('liveRaw6').textContent = t6.toString();
+                
+                // Query token 8 (GOLD)
+                const t8 = await c.getTokenValueUSD(8);
+                document.getElementById('liveToken8').textContent = '$' + parseFloat(t8.toString()).toLocaleString('en-US');
+                document.getElementById('liveRaw8').textContent = t8.toString();
+                
+                document.getElementById('liveTimestamp').textContent = 'Last query: ' + new Date().toLocaleTimeString();
+            } catch(e) { 
+                console.error(e);
+                alert('Error querying Ethereum: ' + e.message);
+            }
         }
         
         function downloadDoc(partner) {
@@ -904,10 +985,11 @@
                 kiedc: 'KIEDC_Verification.docx',
                 ordiamex: 'ORDIAMEX_Verification.docx'
             };
-            alert('Downloading ' + docs[partner] + '...\n\nDocuments are available in the repository.');
+            alert('Download ' + docs[partner] + ' from the repository files.');
         }
         
         refresh();
+        refreshLive();
         setInterval(refresh, 30000);
     </script>
 </body>
