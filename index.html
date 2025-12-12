@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLAME Protocol | On-Chain Verification</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1a1a1a;
+            --border: #2a2a2a;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a3a3a3;
+            --text-muted: #737373;
+            --accent: #ffffff;
+            --positive: #22c55e;
+            --negative: #ef4444;
+        }
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .logo-text {
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-size: 12px;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+        }
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--positive);
+            border-radius: 50%;
+        }
+        .main-stat {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 32px 24px;
+        }
+        .main-stat-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .main-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .main-stat-value {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: -1px;
+        }
+        .main-stat-row {
+            display: flex;
+            gap: 48px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        .stat-box {
+            min-width: 140px;
+        }
+        .stat-box-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-box-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 16px;
+        }
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+        }
+        .panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+        .panel-body {
+            padding: 16px;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-row:last-child {
+            border-bottom: none;
+        }
+        .data-label {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .data-value {
+            color: var(--text-primary);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+        }
+        .data-value.positive {
+            color: var(--positive);
+        }
+        .address {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            padding: 8px 12px;
+            margin: 8px 0;
+            word-break: break-all;
+        }
+        .link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .link:hover {
+            color: var(--accent);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+        .token-id {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .token-value {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--positive);
+            font-weight: 500;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        .badge.gb { border-color: #525252; color: #a3a3a3; }
+        .badge.kiedc { border-color: #166534; color: #22c55e; }
+        .badge.ordiamex { border-color: #1e40af; color: #3b82f6; }
+        .section {
+            margin-bottom: 24px;
+        }
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .partner-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        .partner-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .partner-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .partner-type {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        .partner-value {
+            text-align: right;
+        }
+        .partner-value-amount {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--positive);
+        }
+        .partner-value-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .partner-body {
+            padding: 16px;
+        }
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 12px;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .calc-label {
+            color: var(--text-muted);
+        }
+        .calc-value {
+            color: var(--text-primary);
+        }
+        .calc-total {
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
+            padding-top: 8px;
+            font-weight: 600;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn:hover {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+        .btn-primary:hover {
+            background: var(--text-primary);
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .hash {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+        .contracts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 12px;
+        }
+        .contract-card {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border: 1px solid var(--border);
+        }
+        .contract-name {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .contract-type {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .contract-address {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        .anchor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 8px;
+        }
+        .anchor-item {
+            background: var(--bg-tertiary);
+            padding: 10px 12px;
+        }
+        .anchor-label {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .anchor-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 24px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+        .footer a:hover {
+            color: var(--accent);
+        }
+        @media (max-width: 768px) {
+            .main-stat-value { font-size: 32px; }
+            .grid { grid-template-columns: 1fr; }
+            .main-stat-row { gap: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-mark">F</div>
+            <div class="logo-text">FLAME PROTOCOL</div>
+        </div>
+        <div class="status">
+            <div class="status-item">
+                <span class="status-dot"></span>
+                <span>ETHEREUM MAINNET</span>
+            </div>
+            <div class="status-item" id="blockHeight">BLOCK: ---</div>
+            <div class="status-item" id="lastUpdate">---</div>
+        </div>
+    </header>
+
+    <div class="main-stat">
+        <div class="main-stat-content">
+            <div class="main-stat-label">Total On-Chain Collateral (USD)</div>
+            <div class="main-stat-value" id="totalValue">$12,544,500,000,000</div>
+            <div class="main-stat-row">
+                <div class="stat-box">
+                    <div class="stat-box-label">M0 Multiple</div>
+                    <div class="stat-box-value" id="m0Multiple">2.28x</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Proof of Claims</div>
+                    <div class="stat-box-value">8</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Smart Contracts</div>
+                    <div class="stat-box-value">5</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Partner Entities</div>
+                    <div class="stat-box-value">3</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Next Token ID</div>
+                    <div class="stat-box-value" id="nextTokenId">9</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- SMART CONTRACTS -->
+        <div class="section">
+            <div class="section-title">Deployed Smart Contracts</div>
+            <div class="contracts-grid">
+                <div class="contract-card">
+                    <div class="contract-name">FLAME Proof of Claims</div>
+                    <div class="contract-type">ERC-721 | Primary Registry</div>
+                    <div class="contract-address">0x3a512FC246B00eea76279348474D210A94c56FE6</div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="btn">Read Contract</a>
+                        <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#code" target="_blank" class="btn">View Code</a>
+                    </div>
+                </div>
+                <div class="contract-card">
+                    <div class="contract-name">HostisLedgerDAO</div>
+                    <div class="contract-type">ERC-721 | Lien Registry</div>
+                    <div class="contract-address">0x7bD550debE939a87843EE5Bd7aC9F0e21ab27180</div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/address/0x7bD550debE939a87843EE5Bd7aC9F0e21ab27180" target="_blank" class="btn">Etherscan</a>
+                    </div>
+                </div>
+                <div class="contract-card">
+                    <div class="contract-name">FLAMEC Token</div>
+                    <div class="contract-type">ERC-20 | Settlement Token</div>
+                    <div class="contract-address">0xCC8598B02BB753b0A557811a99622b33C73692cF</div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/token/0xCC8598B02BB753b0A557811a99622b33C73692cF" target="_blank" class="btn">Token Info</a>
+                    </div>
+                </div>
+                <div class="contract-card">
+                    <div class="contract-name">Gnosis Safe</div>
+                    <div class="contract-type">Multi-Sig | Controller</div>
+                    <div class="contract-address">0xAefd8aa7EcfCFA8041Dc66796A6eF673D108e36b</div>
+                    <div class="actions">
+                        <a href="https://app.safe.global/eth:0xAefd8aa7EcfCFA8041Dc66796A6eF673D108e36b" target="_blank" class="btn">Safe App</a>
+                    </div>
+                </div>
+                <div class="contract-card">
+                    <div class="contract-name">Sovereign Deployer</div>
+                    <div class="contract-type">EOA | Treasury</div>
+                    <div class="contract-address">0x90206A9888E3963c22f6AD1c79245b6250CFc016</div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/address/0x90206A9888E3963c22f6AD1c79245b6250CFc016" target="_blank" class="btn">Etherscan</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PARTNER SECTIONS -->
+        <div class="section">
+            <div class="section-title">Partner Entities & Revenue Distribution</div>
+            
+            <!-- GB DYNAMICS -->
+            <div class="partner-section" id="gb-dynamics">
+                <div class="partner-header">
+                    <div>
+                        <div class="partner-name">QMM FLAME GB DYNAMICS INC</div>
+                        <div class="partner-type">Primary Revenue Recipient • 70% All Tokens</div>
+                    </div>
+                    <div class="partner-value">
+                        <div class="partner-value-amount">$8,781,150,000,000</div>
+                        <div class="partner-value-label">Total Revenue Share</div>
+                    </div>
+                </div>
+                <div class="partner-body">
+                    <div class="address">0xaCe313FBc92b43b87A6B1783A1941d3d9ecFBb3f</div>
+                    <div class="calc-row">
+                        <span class="calc-label">Total Collateral</span>
+                        <span class="calc-value">$12,544,500,000,000</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-label">Revenue Rate (All Tokens)</span>
+                        <span class="calc-value">70.00%</span>
+                    </div>
+                    <div class="calc-row calc-total">
+                        <span class="calc-label">Total Revenue</span>
+                        <span class="calc-value" style="color: var(--positive);">$8,781,150,000,000</span>
+                    </div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/address/0xaCe313FBc92b43b87A6B1783A1941d3d9ecFBb3f" target="_blank" class="btn">Verify Wallet</a>
+                        <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="btn">Verify Contract</a>
+                        <a href="#" onclick="downloadDoc('gb')" class="btn btn-primary">Download Verification</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KIEDC -->
+            <div class="partner-section" id="kiedc">
+                <div class="partner-header">
+                    <div>
+                        <div class="partner-name">KIEDC</div>
+                        <div class="partner-type">Founding Partner • Token #6 Owner</div>
+                    </div>
+                    <div class="partner-value">
+                        <div class="partner-value-amount">$938,475,000,000</div>
+                        <div class="partner-value-label">Total Revenue Share</div>
+                    </div>
+                </div>
+                <div class="partner-body">
+                    <div class="address">0x50085C0Df64f3dadB526b93E938fE99BBc31C04d</div>
+                    <div class="calc-row">
+                        <span class="calc-label">Token #6 (ZAMBIA-KIEDC) × 30%</span>
+                        <span class="calc-value">$150,000,000</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-label">Legacy Tokens (1,2,3,4,7,8) × 7.5%</span>
+                        <span class="calc-value">$938,325,000,000</span>
+                    </div>
+                    <div class="calc-row calc-total">
+                        <span class="calc-label">Total Revenue</span>
+                        <span class="calc-value" style="color: var(--positive);">$938,475,000,000</span>
+                    </div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/address/0x50085C0Df64f3dadB526b93E938fE99BBc31C04d" target="_blank" class="btn">Verify Wallet</a>
+                        <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="btn">getClaim(6)</a>
+                        <a href="#" onclick="downloadDoc('kiedc')" class="btn btn-primary">Download Verification</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDIAMEX -->
+            <div class="partner-section" id="ordiamex">
+                <div class="partner-header">
+                    <div>
+                        <div class="partner-name">ORDIAMEX</div>
+                        <div class="partner-type">Founding Partner • Token #5 Owner</div>
+                    </div>
+                    <div class="partner-value">
+                        <div class="partner-value-amount">$10,838,362,500,000</div>
+                        <div class="partner-value-label">Total Revenue Share</div>
+                    </div>
+                </div>
+                <div class="partner-body">
+                    <div class="address">0xE4044D0a0237895d03052A7068AA255939671B46</div>
+                    <div class="calc-row">
+                        <span class="calc-label">Token #5 (GUINEA-ORDIAMEX) × 30%</span>
+                        <span class="calc-value">$9,900,000,000</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-label">Legacy Tokens (1,2,3,4,6,7,8) × 7.5%</span>
+                        <span class="calc-value">$938,362,500,000</span>
+                    </div>
+                    <div class="calc-row calc-total">
+                        <span class="calc-label">Total Revenue</span>
+                        <span class="calc-value" style="color: var(--positive);">$10,838,362,500,000</span>
+                    </div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/address/0xE4044D0a0237895d03052A7068AA255939671B46" target="_blank" class="btn">Verify Wallet</a>
+                        <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="btn">getClaim(5)</a>
+                        <a href="#" onclick="downloadDoc('ordiamex')" class="btn btn-primary">Download Verification</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOVEREIGN -->
+            <div class="partner-section" id="sovereign">
+                <div class="partner-header">
+                    <div>
+                        <div class="partner-name">FLAME SOVEREIGN</div>
+                        <div class="partner-type">Legacy Token Recipient • 15%</div>
+                    </div>
+                    <div class="partner-value">
+                        <div class="partner-value-amount">$1,876,650,000,000</div>
+                        <div class="partner-value-label">Total Revenue Share</div>
+                    </div>
+                </div>
+                <div class="partner-body">
+                    <div class="address">0x0d38aA7414d6ca4Db49F3b5c65FEE7B1CfEfd820</div>
+                    <div class="calc-row">
+                        <span class="calc-label">Legacy Tokens (1,2,3,4,7,8) × 15%</span>
+                        <span class="calc-value">$1,876,650,000,000</span>
+                    </div>
+                    <div class="actions">
+                        <a href="https://etherscan.io/address/0x0d38aA7414d6ca4Db49F3b5c65FEE7B1CfEfd820" target="_blank" class="btn">Verify Wallet</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOKEN REGISTRY -->
+        <div class="section">
+            <div class="section-title">Proof of Claims Registry</div>
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Token Details</span>
+                    <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">Verify All →</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Symbol</th>
+                            <th>Description</th>
+                            <th>Value (USD)</th>
+                            <th>Primary Holder</th>
+                            <th>Verify</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="token-id">1</td>
+                            <td>POC-001-AEON-CORE</td>
+                            <td>AEON CORE TOKEN at HostisLedgerDAO</td>
+                            <td class="token-value">$18,200,000,000</td>
+                            <td><span class="badge gb">GB DYNAMICS</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(1)</a></td>
+                        </tr>
+                        <tr>
+                            <td class="token-id">2</td>
+                            <td>POC-002-SILVER-BULLION</td>
+                            <td>Silver Bullion Bond CUSIP 026300301</td>
+                            <td class="token-value">$100,000,000,000</td>
+                            <td><span class="badge gb">GB DYNAMICS</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(2)</a></td>
+                        </tr>
+                        <tr>
+                            <td class="token-id">3</td>
+                            <td>POC-003-TREASURY-SILVER</td>
+                            <td>Treasury Silver Reserve</td>
+                            <td class="token-value">$1,050,000,000</td>
+                            <td><span class="badge gb">GB DYNAMICS</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(3)</a></td>
+                        </tr>
+                        <tr>
+                            <td class="token-id">4</td>
+                            <td>POC-004-UCC-FILINGS</td>
+                            <td>UCC Article 8 Filings</td>
+                            <td class="token-value">$80,750,000,000</td>
+                            <td><span class="badge gb">GB DYNAMICS</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(4)</a></td>
+                        </tr>
+                        <tr style="background: rgba(59,130,246,0.05);">
+                            <td class="token-id">5</td>
+                            <td>POC-005-GUINEA-ORDIAMEX</td>
+                            <td>ORDIAMEX Guinea 240 Tons Gold</td>
+                            <td class="token-value">$33,000,000,000</td>
+                            <td><span class="badge ordiamex">ORDIAMEX</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(5)</a></td>
+                        </tr>
+                        <tr style="background: rgba(34,197,94,0.05);">
+                            <td class="token-id">6</td>
+                            <td>POC-006-ZAMBIA-KIEDC</td>
+                            <td>KIEDC Zambia Mining License</td>
+                            <td class="token-value">$500,000,000</td>
+                            <td><span class="badge kiedc">KIEDC</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(6)</a></td>
+                        </tr>
+                        <tr>
+                            <td class="token-id">7</td>
+                            <td>POC-007-SEC-CIK</td>
+                            <td>SEC CIK 0001750462 Registration</td>
+                            <td class="token-value">$1,000,000,000</td>
+                            <td><span class="badge gb">GB DYNAMICS</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(7)</a></td>
+                        </tr>
+                        <tr>
+                            <td class="token-id">8</td>
+                            <td>POC-008-GOLD-REFERENCE</td>
+                            <td>Sovereign Gold Title ₿3T Reference</td>
+                            <td class="token-value">$12,310,000,000,000</td>
+                            <td><span class="badge gb">GB DYNAMICS</span></td>
+                            <td><a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6#readContract" target="_blank" class="link">getClaim(8)</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CONSTITUTIONAL ANCHORS -->
+        <div class="section">
+            <div class="section-title">Constitutional Anchors (Immutable)</div>
+            <div class="anchor-grid">
+                <div class="anchor-item">
+                    <div class="anchor-label">UID_FINAL_ROOT</div>
+                    <div class="anchor-value">0xdb6f41c5b3de2369d7f022bc907c02b9f72b797ba56e972c0917b547e3b8149f</div>
+                </div>
+                <div class="anchor-item">
+                    <div class="anchor-label">EPOCH_HASH</div>
+                    <div class="anchor-value">0xe49b928c445130022cbf4168489edd0f0fb2d2ba6377cc6036a51e6e2fa2c2ed</div>
+                </div>
+                <div class="anchor-item">
+                    <div class="anchor-label">CONSTITUTIONAL_ROOT</div>
+                    <div class="anchor-value">0x98b6abcf53af30c2a3eed65df1bc7d27488501d92ce2af1c98e1416e5ba19dc7</div>
+                </div>
+                <div class="anchor-item">
+                    <div class="anchor-label">MERKLE_ROOT</div>
+                    <div class="anchor-value">0xbe3c1e8fa767242dc5fa1ade112fe1a669674d2b84d3fba5483d0901a62ce4b2</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRANSACTION PROOFS -->
+        <div class="section">
+            <div class="section-title">Transaction Proofs</div>
+            <div class="grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Contract Deployment</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="data-row">
+                            <span class="data-label">Block</span>
+                            <span class="data-value">23998253</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Hash</span>
+                            <span class="data-value hash">0x385c55dfce606e1acd7df9240df74f6c5c10908cd74013eae57900b62dbfbfaa</span>
+                        </div>
+                        <a href="https://etherscan.io/tx/0x385c55dfce606e1acd7df9240df74f6c5c10908cd74013eae57900b62dbfbfaa" target="_blank" class="btn" style="margin-top: 12px;">View Transaction</a>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Token Minting</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="data-row">
+                            <span class="data-label">Tokens Minted</span>
+                            <span class="data-value">8</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Hash</span>
+                            <span class="data-value hash">0xdb4af774140001b7039a54c391dec1eabc69edb40090409e52c78670cbcb0b31</span>
+                        </div>
+                        <a href="https://etherscan.io/tx/0xdb4af774140001b7039a54c391dec1eabc69edb40090409e52c78670cbcb0b31" target="_blank" class="btn" style="margin-top: 12px;">View Transaction</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEDERAL REGISTRATIONS -->
+        <div class="section">
+            <div class="section-title">Federal Registrations</div>
+            <div class="grid">
+                <div class="panel">
+                    <div class="panel-body">
+                        <div class="data-row">
+                            <span class="data-label">STB Registration</span>
+                            <span class="data-value">W-435</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">SEC CIK</span>
+                            <span class="data-value">0001750462</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">IRS EIN</span>
+                            <span class="data-value">98-6101010</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">DRS Account</span>
+                            <span class="data-value">1124-911</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Primary CUSIP</span>
+                            <span class="data-value">U7419PAA9</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-body">
+                        <div class="data-row">
+                            <span class="data-label">Trust Registration</span>
+                            <span class="data-value">RE384951947US</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Trustee</span>
+                            <span class="data-value">YOLANDA YISRAEL</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">CA Recording</span>
+                            <span class="data-value">2021407755</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Apostille</span>
+                            <span class="data-value">#99918</span>
+                        </div>
+                        <div class="actions" style="margin-top: 12px;">
+                            <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001750462" target="_blank" class="btn">SEC.gov</a>
+                            <a href="https://www.stb.gov" target="_blank" class="btn">STB.gov</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p><strong>Autochthon Kingdom Decentralized Sovereign Trust</strong></p>
+        <p>All values read directly from Ethereum Mainnet. No wallet connection required.</p>
+        <p style="margin-top: 12px;">
+            <a href="https://etherscan.io/address/0x3a512FC246B00eea76279348474D210A94c56FE6" target="_blank">Contract</a> •
+            <a href="https://gateway.pinata.cloud/ipfs/bafybeihxwrhta5fmospx4niiwyi6ibelxqx6c2kfv4jleu3ssxzxt4a2v4" target="_blank">IPFS Evidence</a>
+        </p>
+    </footer>
+
+    <script>
+        const CONTRACT = "0x3a512FC246B00eea76279348474D210A94c56FE6";
+        const RPC = ["https://eth.llamarpc.com","https://rpc.ankr.com/eth","https://ethereum.publicnode.com"];
+        const ABI = ["function getTotalCollateralValue() view returns (uint256)","function nextTokenId() view returns (uint256)"];
+        
+        async function getProvider() {
+            for (const r of RPC) {
+                try {
+                    const p = new ethers.providers.JsonRpcProvider(r);
+                    await p.getBlockNumber();
+                    return p;
+                } catch(e) {}
+            }
+            return null;
+        }
+        
+        async function refresh() {
+            try {
+                const p = await getProvider();
+                if (!p) return;
+                const block = await p.getBlockNumber();
+                document.getElementById('blockHeight').textContent = 'BLOCK: ' + block.toLocaleString();
+                const c = new ethers.Contract(CONTRACT, ABI, p);
+                const total = await c.getTotalCollateralValue();
+                document.getElementById('totalValue').textContent = '$' + parseFloat(total.toString()).toLocaleString('en-US');
+                document.getElementById('m0Multiple').textContent = (parseFloat(total.toString())/5500000000000).toFixed(2) + 'x';
+                const next = await c.nextTokenId();
+                document.getElementById('nextTokenId').textContent = next.toString();
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            } catch(e) { console.error(e); }
+        }
+        
+        function downloadDoc(partner) {
+            const docs = {
+                gb: 'GB_Dynamics_Verification.docx',
+                kiedc: 'KIEDC_Verification.docx',
+                ordiamex: 'ORDIAMEX_Verification.docx'
+            };
+            alert('Downloading ' + docs[partner] + '...\n\nDocuments are available in the repository.');
+        }
+        
+        refresh();
+        setInterval(refresh, 30000);
+    </script>
+</body>
+</html>
